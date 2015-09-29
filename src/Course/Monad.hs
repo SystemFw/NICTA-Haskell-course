@@ -10,13 +10,13 @@ module Course.Monad(
 , (<=<)
 ) where
 
-import Course.Applicative
+import Course.Applicative hiding (<*>)
 import Course.Core
 import Course.Id
 import Course.List
 import Course.Optional
 import qualified Prelude as P
-
+import qualified Applicative as A
 -- | All instances of the `Monad` type-class must satisfy one law. This law
 -- is not checked by the compiler. This law is given as:
 --
