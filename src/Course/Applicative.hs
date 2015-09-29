@@ -377,10 +377,10 @@ filtering ::
   (a -> f Bool)
   -> List a
   -> f (List a)
-filtering f l = undefined --filter ((map f l))(map pure l)
--- sequence $ lift2 (*>)( map f l)( map pure l)
- --filter <$> (map (const . f l)) <*> l
-
+filtering f l = (<$>) flatten . sequence $ zipWith (lift2 select) (map f l) (map pure l)
+ where select True x = x :. Nil
+       select False _ = Nil
+       
 -----------------------
 -- SUPPORT LIBRARIES --
 -----------------------
