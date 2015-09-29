@@ -10,13 +10,15 @@ module Course.Monad(
 , (<=<)
 ) where
 
-import Course.Applicative hiding (<*>)
+import Course.Applicative hiding ((<*>))
 import Course.Core
 import Course.Id
 import Course.List
 import Course.Optional
 import qualified Prelude as P
-import qualified Applicative as A
+import qualified Course.Applicative as A
+import Course.Functor
+
 -- | All instances of the `Monad` type-class must satisfy one law. This law
 -- is not checked by the compiler. This law is given as:
 --
@@ -67,8 +69,9 @@ infixr 1 =<<
   f (a -> b)
   -> f a
   -> f b
-(<*>) =
-  error "todo: Course.Monad#(<*>)"
+k <*> x =
+  undefined
+  
 
 infixl 4 <*>
 
@@ -81,8 +84,8 @@ instance Monad Id where
     (a -> Id b)
     -> Id a
     -> Id b
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance Id"
+  k =<< (Id v) =
+     k v
 
 -- | Binds a function on a List.
 --
@@ -93,8 +96,8 @@ instance Monad List where
     (a -> List b)
     -> List a
     -> List b
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance List"
+  (=<<) k =
+    flatten . map k
 
 -- | Binds a function on an Optional.
 --
@@ -105,9 +108,10 @@ instance Monad Optional where
     (a -> Optional b)
     -> Optional a
     -> Optional b
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance Optional"
-
+  k =<< Empty =
+    Empty
+  k =<< (Full v) =
+    k v
 -- | Binds a function on the reader ((->) t).
 --
 -- >>> ((*) =<< (+10)) 7
@@ -117,8 +121,9 @@ instance Monad ((->) t) where
     (a -> ((->) t b))
     -> ((->) t a)
     -> ((->) t b)
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance ((->) t)"
+  (=<<) k f v =
+    k (f v) v
+
 
 -- | Flattens a combined structure to a single structure.
 --
@@ -138,7 +143,8 @@ join ::
   f (f a)
   -> f a
 join =
-  error "todo: Course.Monad#join"
+  (id =<<)
+  
 
 -- | Implement a flipped version of @(=<<)@, however, use only
 -- @join@ and @(<$>)@.
@@ -151,8 +157,8 @@ join =
   f a
   -> (a -> f b)
   -> f b
-(>>=) =
-  flip (=<<)
+v >>= k =
+  join $ k <$> v
 
 infixl 1 >>=
 
@@ -167,8 +173,8 @@ infixl 1 >>=
   -> (a -> f b)
   -> a
   -> f c
-(<=<) =
-  error "todo: Course.Monad#(<=<)"
+(<=<) k2 k1 v =
+  k2 =<< k1 v
 
 infixr 1 <=<
 
