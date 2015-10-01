@@ -63,7 +63,8 @@ infixl 4 <*>
   (a -> b)
   -> f a
   -> f b
-f <$> x = pure f <*> x 
+f <$> x =
+  pure f <*> x 
   
 
 -- | Insert into Id.
@@ -81,7 +82,8 @@ instance Applicative Id where
     Id (a -> b)
     -> Id a
     -> Id b
-  (Id f) <*> (Id v) = Id $ f v
+  (Id f) <*> (Id v) =
+    Id $ f v
 
 -- | Insert into a List.
 --
@@ -92,15 +94,17 @@ instance Applicative Id where
 instance Applicative List where
   pure :: a -> List a
   pure =
-    take 1 . repeat
+    (:. Nil)
   (<*>) ::
     List (a -> b)
     -> List a
     -> List b
-  Nil <*> _ =
-    Nil
-  (f:.fs) <*> v =
-    map f v ++ (fs <*> v)
+  fs <*> vs =
+    flatMap (`map` vs) fs 
+-- Nil <*> _ =
+  --   Nil
+  -- (f:.fs) <*> v =
+  --   map f v ++ (fs <*> v)
   
 -- | Insert into an Optional.
 --
@@ -124,10 +128,8 @@ instance Applicative Optional where
     Optional (a -> b)
     -> Optional a
     -> Optional b
-  Empty  <*> _ =
-    Empty
-  Full f <*> v =
-    f F.<$> v
+  f <*> v =
+    bindOptional (`mapOptional` v) f
 
 -- | Insert into a constant function.
 --
@@ -377,9 +379,8 @@ filtering ::
   (a -> f Bool)
   -> List a
   -> f (List a)
-filtering f l = (<$>) flatten . sequence $ zipWith (lift2 select) (map f l) (map pure l)
- where select True x = x :. Nil
-       select False _ = Nil
+filtering p =
+  foldRight (\a -> lift2 (\b -> if b then (a:.) else id) (p a)) (pure Nil)
        
 -----------------------
 -- SUPPORT LIBRARIES --
