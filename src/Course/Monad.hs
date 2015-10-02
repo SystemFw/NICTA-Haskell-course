@@ -70,8 +70,8 @@ infixr 1 =<<
   -> f a
   -> f b
 k <*> x =
-  undefined
-  
+  (\a -> ($ a) <$> k) =<< x
+ 
 
 infixl 4 <*>
 
