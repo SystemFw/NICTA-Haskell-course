@@ -63,12 +63,10 @@ the contents of c
 main ::
   IO ()
 main =
- do args <- getArgs
-    let path = take 1 args
-    if isEmpty path
-      then putStrLn "Please provide an argument" *> pure ()
-      else run $ head path           
-  where head (x:._) = x
+  getArgs >>= \args ->
+    case args of
+      name :. Nil -> run name
+      Nil -> putStrLn "Please provide a filename as an argument"
 
 type FilePath =
   Chars
@@ -79,8 +77,7 @@ run ::
   -> IO ()
 run pathsFile =
   do paths <- readFile pathsFile
-     let filenames = lines paths
-     files <- getFiles filenames
+     files <- getFiles $ lines paths
      printFiles files
 
 
@@ -95,7 +92,6 @@ getFile ::
   -> IO (FilePath, Chars)
 getFile p =
   (,) p <$> readFile p
-  
 
 printFiles ::
   List (FilePath, Chars)
