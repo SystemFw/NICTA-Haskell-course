@@ -11,6 +11,7 @@ import Course.Monad
 import Course.Functor
 import Course.List
 
+
 {-
 
 Useful Functions --
@@ -62,7 +63,12 @@ the contents of c
 main ::
   IO ()
 main =
-  error "todo: Course.FileIO#main"
+ do args <- getArgs
+    let path = take 1 args
+    if isEmpty path
+      then putStrLn "Please provide an argument" *> pure ()
+      else run $ head path           
+  where head (x:._) = x
 
 type FilePath =
   Chars
@@ -71,31 +77,36 @@ type FilePath =
 run ::
   Chars
   -> IO ()
-run =
-  error "todo: Course.FileIO#run"
+run pathsFile =
+  do paths <- readFile pathsFile
+     let filenames = lines paths
+     files <- getFiles filenames
+     printFiles files
+
 
 getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
 getFiles =
-  error "todo: Course.FileIO#getFiles"
+  sequence . map getFile
 
 getFile ::
   FilePath
   -> IO (FilePath, Chars)
-getFile =
-  error "todo: Course.FileIO#getFile"
+getFile p =
+  (,) p <$> readFile p
+  
 
 printFiles ::
   List (FilePath, Chars)
   -> IO ()
-printFiles =
-  error "todo: Course.FileIO#printFiles"
+printFiles  =
+  void . sequence . map (uncurry printFile) 
 
 printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile =
-  error "todo: Course.FileIO#printFile"
+printFile path contents =
+  putStrLn $ replicate 12 '=' ++ path ++ "\n" ++ contents
 
