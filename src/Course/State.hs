@@ -13,6 +13,7 @@ import Course.Functor
 import Course.Applicative
 import Course.Monad
 import qualified Data.Set as S
+import Control.Arrow (first)
 
 -- $setup
 -- >>> import Test.QuickCheck.Function
@@ -40,8 +41,10 @@ instance Functor (State s) where
     -> State s a
     -> State s b
   (<$>) =
-      error "todo: Course.State#(<$>)"
-
+    inState . (<$>) . first
+    where inState f =
+            State . f . runState
+                
 -- | Implement the `Applicative` instance for `State s`.
 --
 -- >>> runState (pure 2) 0
@@ -57,16 +60,19 @@ instance Applicative (State s) where
   pure ::
     a
     -> State s a
-  pure =
-    error "todo: Course.State pure#instance (State s)"
+  pure a =
+    State $ \s -> (a,s)
   (<*>) ::
     State s (a -> b)
     -> State s a
     -> State s b 
-  (<*>) =
-    error "todo: Course.State (<*>)#instance (State s)"
+  x <*> y =  State $ \s ->       
+    let (f,s') = runState x s   
+        (v,s'') = runState y s' 
+    in  (f v, s'')              
+  
 
--- | Implement the `Bind` instance for `State s`.
+-- | Implement the `Monad` instance for `State s`.
 -- >>> runState ((const $ put 2) =<< put 1) 0
 -- ((),2)
 instance Monad (State s) where
@@ -74,8 +80,11 @@ instance Monad (State s) where
     (a -> State s b)
     -> State s a
     -> State s b
-  (=<<) =
-    error "todo: Course.State (=<<)#instance (State s)"
+  k =<< f = State $ \s ->
+    let (a,s') = runState f s
+    in runState (k a) s'
+    
+
 
 -- | Run the `State` seeded with `s` and retrieve the resulting state.
 --
@@ -84,8 +93,8 @@ exec ::
   State s a
   -> s
   -> s
-exec =
-  error "todo: Course.State#exec"
+exec st =
+  snd . runState st
 
 -- | Run the `State` seeded with `s` and retrieve the resulting value.
 --
@@ -94,8 +103,8 @@ eval ::
   State s a
   -> s
   -> a
-eval =
-  error "todo: Course.State#eval"
+eval st =
+  fst . runState st
 
 -- | A `State` where the state also distributes into the produced value.
 --
@@ -104,7 +113,7 @@ eval =
 get ::
   State s s
 get =
-  error "todo: Course.State#get"
+  State $ join (,)
 
 -- | A `State` where the resulting state is seeded with the given value.
 --
@@ -114,7 +123,7 @@ put ::
   s
   -> State s ()
 put =
-  error "todo: Course.State#put"
+  State . const . (,) ()
 
 -- | Find the first element in a `List` that satisfies a given predicate.
 -- It is possible that no element is found, hence an `Optional` result.
@@ -125,7 +134,7 @@ put =
 --   find ::  (a ->   Bool) -> List a ->    Optional a
 --   findM :: (a -> f Bool) -> List a -> f (Optional a)
 --
--- >>> let p x = (\s -> (const $ pure (x == 'c')) =<< put (1+s)) =<< get in runState (findM p $ listh ['a'..'h']) 0
+-- >>>  let p x = (\s -> (const $ pure (x == 'c')) =<< put (1+s)) =<< get in runState (findM p $ listh ['a'..'h']) 0
 -- (Full 'c',3)
 --
 -- >>> let p x = (\s -> (const $ pure (x == 'i')) =<< put (1+s)) =<< get in runState (findM p $ listh ['a'..'h']) 8
@@ -135,8 +144,20 @@ findM ::
   (a -> f Bool)
   -> List a
   -> f (Optional a)
-findM =
-  error "todo: Course.State#findM"
+findM p  = (<$>) listToOpt . filtering p 
+  where listToOpt Nil = Empty
+        listToOpt (x:._) = Full x 
+-- findM _ Nil =
+--   pure Empty
+-- findM p (x:.xs) =
+--   if holds p x then Full $ pure x else x
+
+
+-- No, it does the search well but runs the effect too many times, applicative vs monad
+-- might be a more general case of the canonical applicative vs monad context sensitivity
+-- example with Maybe
+        
+
 
 -- | Find the first element in a `List` that repeats.
 -- It is possible that no element repeats, hence an `Optional` result.
@@ -191,3 +212,5 @@ isHappy ::
   -> Bool
 isHappy =
   error "todo: Course.State#isHappy"
+
+
