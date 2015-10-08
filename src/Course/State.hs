@@ -137,26 +137,17 @@ put =
 -- >>>  let p x = (\s -> (const $ pure (x == 'c')) =<< put (1+s)) =<< get in runState (findM p $ listh ['a'..'h']) 0
 -- (Full 'c',3)
 --
--- >>> let p x = (\s -> (const $ pure (x == 'i')) =<< put (1+s)) =<< get in runState (findM p $ listh ['a'..'h']) 8
+-- >>> let p x = (\s -> (const $ pure (x == 'i')) =<< put (1+s)) =<< get in runState (findM p $ listh ['a'..'h']) 0
 -- (Empty,8)
 findM ::
   Monad f =>
   (a -> f Bool)
   -> List a
   -> f (Optional a)
-findM p  = (<$>) listToOpt . filtering p 
-  where listToOpt Nil = Empty
-        listToOpt (x:._) = Full x 
--- findM _ Nil =
---   pure Empty
--- findM p (x:.xs) =
---   if holds p x then Full $ pure x else x
-
-
--- No, it does the search well but runs the effect too many times, applicative vs monad
--- might be a more general case of the canonical applicative vs monad context sensitivity
--- example with Maybe
-        
+findM _ Nil =
+  pure Empty
+findM p (x:.xs) =
+  (\b-> if b then pure $ Full x else findM p xs) =<< p x 
 
 
 -- | Find the first element in a `List` that repeats.
@@ -170,8 +161,15 @@ firstRepeat ::
   Ord a =>
   List a
   -> Optional a
-firstRepeat =
-  error "todo: Course.State#firstRepeat"
+firstRepeat xs = eval (findM p xs) S.empty
+  where p x = 
+          do set <- get                    
+             if S.member x set             
+               then return True            
+               else do put (S.insert x set)
+                       return False        
+-- (\set -> if S.member x set then pure True else pure False <* put (S.insert x set)) =<< get
+
 
 -- | Remove all duplicate elements in a `List`.
 -- /Tip:/ Use `filtering` and `State` with a @Data.Set#Set@.
@@ -212,5 +210,6 @@ isHappy ::
   -> Bool
 isHappy =
   error "todo: Course.State#isHappy"
+
 
 
