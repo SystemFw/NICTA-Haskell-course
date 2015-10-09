@@ -71,7 +71,6 @@ instance Applicative (State s) where
         (v,s'') = runState y s' 
     in  (f v, s'')              
   
-
 -- | Implement the `Monad` instance for `State s`.
 -- >>> runState ((const $ put 2) =<< put 1) 0
 -- ((),2)
@@ -84,8 +83,6 @@ instance Monad (State s) where
     let (a,s') = runState f s
     in runState (k a) s'
     
-
-
 -- | Run the `State` seeded with `s` and retrieve the resulting state.
 --
 -- prop> \(Fun _ f) -> exec (State f) s == snd (runState (State f) s)
@@ -161,16 +158,9 @@ firstRepeat ::
   Ord a =>
   List a
   -> Optional a
-firstRepeat xs = eval (findM p xs) S.empty
-  where p x = 
-          do set <- get                    
-             if S.member x set             
-               then return True            
-               else do put (S.insert x set)
-                       return False        
--- (\set -> if S.member x set then pure True else pure False <* put (S.insert x set)) =<< get
-
-
+firstRepeat xs =
+  eval (findM isRepeated xs) S.empty
+ 
 -- | Remove all duplicate elements in a `List`.
 -- /Tip:/ Use `filtering` and `State` with a @Data.Set#Set@.
 --
@@ -181,8 +171,18 @@ distinct ::
   Ord a =>
   List a
   -> List a
-distinct =
-  error "todo: Course.State#distinct"
+distinct xs =
+  eval (filtering isNotRepeated xs) S.empty
+  where isNotRepeated = (<$>) not . isRepeated
+          
+isRepeated :: Ord a => a -> State (S.Set a) Bool
+isRepeated x =
+  do set <- get                    
+     if S.member x set             
+       then return False            
+       else do put (S.insert x set)
+               return True         
+-- (\set -> if S.member x set then pure True else pure False <* put (S.insert x set)) =<< get
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.
 -- In contrast, a sad number (not a happy number) is where the sum of the square of its digits never reaches 1
@@ -211,5 +211,5 @@ isHappy ::
 isHappy =
   error "todo: Course.State#isHappy"
 
-
+-- do I need to use a monad for this? probably not
 
