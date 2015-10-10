@@ -14,6 +14,7 @@ import Course.Applicative
 import Course.Monad
 import qualified Data.Set as S
 import Control.Arrow (first)
+import Data.Char (digitToInt)
 
 -- $setup
 -- >>> import Test.QuickCheck.Function
@@ -179,9 +180,9 @@ isRepeated :: Ord a => a -> State (S.Set a) Bool
 isRepeated x =
   do set <- get                    
      if S.member x set             
-       then return False            
+       then return True             
        else do put (S.insert x set)
-               return True         
+               return False         
 -- (\set -> if S.member x set then pure True else pure False <* put (S.insert x set)) =<< get
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.
@@ -208,8 +209,5 @@ isRepeated x =
 isHappy ::
   Integer
   -> Bool
-isHappy =
-  error "todo: Course.State#isHappy"
-
--- do I need to use a monad for this? probably not
-
+isHappy = contains 1 . firstRepeat . produce sumOfSquaredDigits
+  where sumOfSquaredDigits = toInteger . sum . map (join (*) . digitToInt) . show'
