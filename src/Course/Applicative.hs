@@ -63,8 +63,9 @@ infixl 4 <*>
   (a -> b)
   -> f a
   -> f b
-f <$> x =
-  pure f <*> x 
+(<$>) =
+  (<*>) . pure
+       
   
 
 -- | Insert into Id.
