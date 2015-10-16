@@ -13,7 +13,7 @@ import Course.Functor
 import Course.Applicative
 import Course.Monad
 import qualified Data.Set as S
-import Control.Arrow (first)
+import Control.Arrow (first,(&&&))
 import Data.Char (digitToInt)
 
 -- $setup
@@ -177,12 +177,17 @@ distinct xs =
   where isNotRepeated = (<$>) not . isRepeated
           
 isRepeated :: Ord a => a -> State (S.Set a) Bool
-isRepeated x =
-  do set <- get                    
-     if S.member x set             
-       then return True             
-       else do put (S.insert x set)
-               return False         
+isRepeated e = State $ (S.member e) &&& (S.insert e)
+
+-- Or the imperative looking version:
+-- isRepeated x =
+--   do set <- get                    
+--      if S.member x set             
+--        then return True             
+--        else do put (S.insert x set)
+--                return False
+--
+-- Or the desugared monadic version
 -- (\set -> if S.member x set then pure True else pure False <* put (S.insert x set)) =<< get
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.

@@ -16,7 +16,7 @@ import Course.Monad
 import Course.State
 import qualified Data.Set as S
 import qualified Prelude as P
-import Control.Arrow (first)
+import Control.Arrow (first,(&&&))
 
 -- $setup
 -- >>> import Test.QuickCheck
@@ -183,8 +183,8 @@ distinct' ::
   (Ord a, Num a) =>
   List a
   -> List a
-distinct' =
-  error "todo: Course.StateT#distinct'"
+distinct' xs = eval' (filtering isNotRepeated' xs) S.empty
+  where isNotRepeated' e = state' ((S.notMember e) &&& (S.insert e))
 
 -- | Remove all duplicate elements in a `List`.
 -- However, if you see a value greater than `100` in the list,
