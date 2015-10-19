@@ -253,7 +253,7 @@ data Logger l a =
 -- >>> (+3) <$> Logger (listh [1,2]) 3
 -- Logger [1,2] 6
 instance Functor (Logger l) where
-  f <$> (Logger l x) = Logger l $ f x
+  f <$> Logger l x = Logger l $ f x
 
 -- | Implement the `Applicative` instance for `Logger`.
 --
@@ -264,7 +264,7 @@ instance Functor (Logger l) where
 -- Logger [1,2,3,4] 10
 instance Applicative (Logger l) where
   pure = Logger Nil 
-  (Logger l1 f) <*> (Logger l2 x) = Logger (l1 ++ l2) $ f x
+  Logger l1 f <*> Logger l2 x = Logger (l1 ++ l2) $ f x
 
 
 -- | Implement the `Monad` instance for `Logger`.
@@ -273,8 +273,8 @@ instance Applicative (Logger l) where
 -- >>> (\a -> Logger (listh [4,5]) (a+3)) =<< Logger (listh [1,2]) 3
 -- Logger [1,2,4,5] 6
 instance Monad (Logger l) where
-  k =<< (Logger l1 x) = let (Logger l2 fx) = k x
-                          in Logger (l1 ++ l2) fx
+  k =<< Logger l x = let Logger l' y = k x
+                      in Logger (l ++ l') y
 
 -- | A utility function for producing a `Logger` with one log value.
 --
@@ -306,10 +306,10 @@ distinctG ::
   List a
   -> Logger Chars (Optional (List a))
 distinctG x = runOptionalT $ evalT (filtering f x) S.empty
-  where f e = StateT $ \s ->
+  where f e = StateT $ \s -> OptionalT $
           if e > 100
-          then OptionalT $ log1 ("aborting > 100: " ++ show' e) Empty
-          else OptionalT $ Logger (if even e
-                                 then listh ["even number: " ++ show' e]
-                                 else Nil) $ Full (S.notMember e s,S.insert e s)
+          then log1 ("aborting > 100: " ++ show' e) Empty
+          else (if even e
+                then log1 $ "even number: " ++ show' e
+                else pure) $ Full (S.notMember e s,S.insert e s)
 
