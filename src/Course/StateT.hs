@@ -306,13 +306,10 @@ distinctG ::
   List a
   -> Logger Chars (Optional (List a))
 distinctG x = runOptionalT $ evalT (filtering f x) S.empty
-  where f :: a -> StateT (S.Set a0) (OptionalT (Logger Chars)) Bool
-             f = undefined
-  
+  where f e = StateT $ \s ->
+          if e > 100
+          then OptionalT $ log1 ("aborting > 100: " ++ show' e) Empty
+          else OptionalT $ Logger (if even e
+                                 then listh ["even number: " ++ show' e]
+                                 else Nil) $ Full (S.notMember e s,S.insert e s)
 
-{- }
-g :: a -> StateT (S.Set a0) (OptionalT (Logger Chars)) Bool
-
-
-
---}
