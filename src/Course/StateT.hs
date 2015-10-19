@@ -305,5 +305,14 @@ distinctG ::
   (Integral a, Show a) =>
   List a
   -> Logger Chars (Optional (List a))
-distinctG =
-  error "todo: Course.StateT#distinctG"
+distinctG x = runOptionalT $ evalT (filtering f x) S.empty
+  where f :: a -> StateT (S.Set a0) (OptionalT (Logger Chars)) Bool
+             f = undefined
+  
+
+{- }
+g :: a -> StateT (S.Set a0) (OptionalT (Logger Chars)) Bool
+
+
+
+--}
