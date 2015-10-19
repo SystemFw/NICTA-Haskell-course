@@ -70,8 +70,7 @@ infixr 1 =<<
   -> f a
   -> f b
 k <*> x =
-  (\a -> ($ a) <$> k) =<< x
- 
+  (\k' -> return . k' =<< x) =<< k 
 
 infixl 4 <*>
 
