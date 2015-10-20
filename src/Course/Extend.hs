@@ -33,8 +33,8 @@ instance Extend Id where
     (Id a -> b)
     -> Id a
     -> Id b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance Id"
+  k <<= x = Id $ k x
+
 
 -- | Implement the @Extend@ instance for @List@.
 --
