@@ -47,14 +47,3 @@ instance Comonad Id where
   -> f b
 f <$> x = f . copure <<= x
 
-
-{- }
-f a -> a
-(f a -> b) -> f a -> f b
-(a->b) -> f a -> f b
-
-(a->b) -> f a -> b
-
-f a -> (a->b) -> f b
-
---}
