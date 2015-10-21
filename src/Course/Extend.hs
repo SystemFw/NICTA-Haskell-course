@@ -51,8 +51,9 @@ instance Extend List where
     (List a -> b)
     -> List a
     -> List b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance List"
+  f <<= Nil = Nil
+  f <<= l@(_:.xs) = f l :. (f <<= xs)
+
 
 -- | Implement the @Extend@ instance for @Optional@.
 --
