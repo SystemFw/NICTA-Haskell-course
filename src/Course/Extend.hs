@@ -67,8 +67,8 @@ instance Extend Optional where
     (Optional a -> b)
     -> Optional a
     -> Optional b
-  _ <<= Empty = Empty
-  f <<= x = Full $ f x
+  (<<=) f = (f . Full <$>)
+
    
 
 -- | Duplicate the functor using extension.
