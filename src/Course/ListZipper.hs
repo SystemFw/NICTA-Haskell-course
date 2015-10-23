@@ -160,7 +160,7 @@ asMaybeZipper f (IsZ z) =
 toList ::
   ListZipper a
   -> List a
-toList (ListZipper ll v rr) = ll ++ pure v ++ rr
+toList (ListZipper ll v rr) = reverse ll ++ pure v ++ rr
   
 
 -- | Convert the given (maybe) zipper back to a list.
@@ -460,7 +460,7 @@ moveLeftN' ::
   -> ListZipper a
   -> Either Int (ListZipper a)
 moveLeftN' n lz 
-  | n < 0 = moveRightN' n lz
+  | n < 0 = moveRightN' (abs n) lz
   | otherwise = case moveLeftN n lz of
     IsNotZ -> Left . length . lefts $ lz
     IsZ res -> Right res
@@ -489,7 +489,7 @@ moveRightN' ::
   -> ListZipper a
   -> Either Int (ListZipper a)
 moveRightN' n lz
-  | n <  0 = moveLeftN' n lz
+  | n <  0 = moveLeftN' (abs n) lz
   | otherwise = case moveRightN n lz of
     IsNotZ -> Left . length . rights $ lz
     IsZ res -> Right res
@@ -618,11 +618,13 @@ insertPushRight nv (ListZipper ll v rr) = ListZipper ll nv (v:.rr)
 -- [5,12] >8< [15,24,12]
 instance Applicative ListZipper where
 -- /Tip:/ Use @List#repeat@.
-  pure =
-    error "todo: Course.ListZipper pure#instance ListZipper"
+  pure = ListZipper <$> repeat <*> id <*> repeat
 -- /Tip:/ Use `zipWith`
-  (<*>) =
-    error "todo: Course.ListZipper (<*>)#instance ListZipper"
+  (ListZipper lf vf rf) <*> (ListZipper l v r) =
+    ListZipper
+              (zipWith ($) lf l)
+              (vf v)
+              (zipWith ($) rf r)
 
 -- | Implement the `Applicative` instance for `MaybeListZipper`.
 --
@@ -645,10 +647,10 @@ instance Applicative ListZipper where
 -- >>> IsNotZ <*> IsNotZ
 -- ><
 instance Applicative MaybeListZipper where
-  pure =
-    error "todo: Course.ListZipper pure#instance MaybeListZipper"
-  (<*>) =
-    error "todo: Course.ListZipper (<*>)#instance MaybeListZipper"
+  pure = IsZ . pure
+  IsNotZ <*> _ = IsNotZ
+  _ <*> IsNotZ = IsNotZ
+  IsZ x <*> IsZ y = IsZ $ x <*> y
 
 -- | Implement the `Extend` instance for `ListZipper`.
 -- This implementation "visits" every possible zipper value derivable from a given zipper (i.e. all zippers to the left and right).
