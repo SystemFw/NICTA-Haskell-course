@@ -107,7 +107,7 @@ instance Monad Optional where
     (a -> Optional b)
     -> Optional a
     -> Optional b
-  k =<< Empty =
+  _ =<< Empty =
     Empty
   k =<< (Full v) =
     k v
