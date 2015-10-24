@@ -695,8 +695,9 @@ instance Comonad ListZipper where
 -- >>> traverse id (zipper [Full 1, Full 2, Full 3] (Full 4) [Empty, Full 6, Full 7])
 -- Empty
 instance Traversable ListZipper where
-  traverse =
-    error "todo: Course.ListZipper traverse#instance ListZipper"
+  traverse f (ListZipper ll v rr) =
+    (ListZipper . reverse) <$> traverse f (reverse ll) <*> f v <*> traverse f rr
+-- The first list in a zipper is normally reversed for efficiency, but we need to traverse it in the original order when dealing with effects
 
 -- | Implement the `Traversable` instance for `MaybeListZipper`.
 --
@@ -708,8 +709,8 @@ instance Traversable ListZipper where
 -- >>> traverse id (IsZ (zipper [Full 1, Full 2, Full 3] (Full 4) [Full 5, Full 6, Full 7]))
 -- Full [1,2,3] >4< [5,6,7]
 instance Traversable MaybeListZipper where
-  traverse =
-    error "todo: Course.ListZipper traverse#instance MaybeListZipper"
+  traverse _ IsNotZ = pure IsNotZ
+  traverse f (IsZ lz) = IsZ <$> traverse f lz
 
 -----------------------
 -- SUPPORT LIBRARIES --
