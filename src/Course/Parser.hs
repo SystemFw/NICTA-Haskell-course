@@ -435,8 +435,7 @@ thisMany n = sequenceParser . replicate n
 -- True
 ageParser ::
   Parser Int
-ageParser =
-  error "todo: Course.Parser#ageParser"
+ageParser = natural
 
 -- | Write a parser for Person.firstName.
 -- /First Name: non-empty string that starts with a capital letter and is followed by zero or more lower-case letters/
@@ -451,7 +450,10 @@ ageParser =
 firstNameParser ::
   Parser Chars
 firstNameParser =
-  error "todo: Course.Parser#firstNameParser"
+  flbindParser upper $ \h ->
+  flbindParser (list lower) $ \t ->
+  valueParser $ h:.t  
+--(:.) <$> upper <*> list lower
 
 -- | Write a parser for Person.surname.
 --
@@ -470,7 +472,11 @@ firstNameParser =
 surnameParser ::
   Parser Chars
 surnameParser =
-  error "todo: Course.Parser#surnameParser"
+  flbindParser upper $ \initial ->
+  flbindParser (thisMany 5 lower) $ \letters ->
+  flbindParser (list lower) $ \moreLetters ->
+  valueParser $ initial:.letters ++ moreLetters
+--surnameParser = (:.) <$> upper <*> ((++) <$> thisMany 5 lower <*> list lower)
 
 -- | Write a parser for Person.smoker.
 --
@@ -488,8 +494,7 @@ surnameParser =
 -- True
 smokerParser ::
   Parser Char
-smokerParser =
-  error "todo: Course.Parser#smokerParser"
+smokerParser = is 'y' ||| is 'n'
 
 -- | Write part of a parser for Person#phoneBody.
 -- This parser will only produce a string of digits, dots or hyphens.
@@ -510,8 +515,7 @@ smokerParser =
 -- Result >a123-456< ""
 phoneBodyParser ::
   Parser Chars
-phoneBodyParser =
-  error "todo: Course.Parser#phoneBodyParser"
+phoneBodyParser = list $ digit ||| is '.' ||| is '-'
 
 -- | Write a parser for Person.phone.
 --
@@ -533,7 +537,10 @@ phoneBodyParser =
 phoneParser ::
   Parser Chars
 phoneParser =
-  error "todo: Course.Parser#phoneParser"
+  flbindParser digit $ \start ->
+  flbindParser phoneBodyParser $ \body ->
+  flbindParser (is '#') $ \_ ->
+  valueParser $ start:.body 
 
 -- | Write a parser for Person.
 --
@@ -582,10 +589,19 @@ phoneParser =
 personParser ::
   Parser Person
 personParser =
-  error "todo: Course.Parser#personParser"
+  flbindParser ageParser $ \ageP ->
+  (>>>) spaces1 $
+  flbindParser firstNameParser $ \nameP ->
+  (>>>) spaces1 $
+  flbindParser surnameParser $ \surnameP ->
+  (>>>) spaces1 $
+  flbindParser smokerParser $ \smokerP ->
+  (>>>) spaces1 $
+  flbindParser phoneParser $ \phoneP ->
+  valueParser $ Person ageP nameP surnameP smokerP phoneP
+-- Applicative style would me more appropriate here
 
 -- Make sure all the tests pass!
-
 
 -- | Write a Functor instance for a @Parser@.
 -- /Tip:/ Use @bindParser@ and @valueParser@.
