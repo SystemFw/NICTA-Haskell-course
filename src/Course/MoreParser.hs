@@ -347,8 +347,7 @@ eof = P $ \s -> case s of
 satisfyAll ::
   List (Char -> Bool)
   -> Parser Char
-satisfyAll =
-  error "todo: Course.MoreParser#satisfyAll"
+satisfyAll = satisfy . (<$>) and . sequence
 
 -- | Write a parser that produces a character that satisfies any of the given predicates.
 --
@@ -368,8 +367,7 @@ satisfyAll =
 satisfyAny ::
   List (Char -> Bool)
   -> Parser Char
-satisfyAny =
-  error "todo: Course.MoreParser#satisfyAny"
+satisfyAny = satisfy . (<$>) or . sequence
 
 -- | Write a parser that parses between the two given characters, separated by a comma character ','.
 --
@@ -397,5 +395,4 @@ betweenSepbyComma ::
   -> Char
   -> Parser a
   -> Parser (List a)
-betweenSepbyComma =
-  error "todo: Course.MoreParser#betweenSepbyComma"
+betweenSepbyComma b e = betweenCharTok b e . (`sepby` is ',')
