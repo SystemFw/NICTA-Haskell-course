@@ -66,7 +66,7 @@ main =
   getArgs >>= \args ->
     case args of
       name :. Nil -> run name
-      Nil -> putStrLn "Please provide a filename as an argument"
+      _ -> putStrLn "Please provide a filename as an argument"
 
 type FilePath =
   Chars
