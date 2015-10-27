@@ -55,7 +55,7 @@ tok ::
   Parser a
   -> Parser a
 tok p = p <* spaces
-
+ 
 -- | Write a function that parses the given char followed by 0 or more spaces.
 --
 -- >>> parse (charTok 'a') "abc"
@@ -395,4 +395,4 @@ betweenSepbyComma ::
   -> Char
   -> Parser a
   -> Parser (List a)
-betweenSepbyComma b e = betweenCharTok b e . (`sepby` is ',')
+betweenSepbyComma b e = betweenCharTok b e . (`sepby` charTok ',')
