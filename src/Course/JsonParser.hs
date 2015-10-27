@@ -269,5 +269,4 @@ jsonValue = spaces *> (JsonNull <$ jsonNull
 readJsonValue ::
   Filename
   -> IO (ParseResult JsonValue)
-readJsonValue =
-  error "todo: Course.JsonParser#readJsonValue"
+readJsonValue = (<$>) (parse jsonValue) . readFile
