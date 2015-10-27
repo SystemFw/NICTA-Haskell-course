@@ -251,7 +251,7 @@ jsonObject =  betweenSepbyComma '{' '}' jsonPair
 --
 -- >>> parse jsonObject "{ \"key1\" : true , \"key2\" : [7, false] , \"key3\" : { \"key4\" : null } }"
 -- Result >< [("key1",JsonTrue),("key2",JsonArray [JsonRational False (7 % 1),JsonFalse]),("key3",JsonObject [("key4",JsonNull)])]
-kjsonValue ::
+jsonValue ::
   Parser JsonValue
 jsonValue = spaces *> (JsonNull <$ jsonNull
              ||| JsonTrue <$ jsonTrue
