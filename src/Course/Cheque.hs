@@ -323,5 +323,23 @@ fromChar _ =
 dollars ::
   Chars
   -> Chars
-dollars =
-  error "todo: Course.Cheque#dollars"
+dollars s =
+  let (m,c) = (reverse . snd &&& reverse . fst) $ break (== '.') $ reverse s
+  in money m ++ " and " ++ cents c
+
+money = id
+
+
+cents = id
+
+aaa c = case take 2 $ filter isFull $ map fromChar c of
+  Nil -> D1 Zero
+  (Full a) :. Nil -> D2 a Zero
+  (Full a) :. (Full b) :.  Nil -> D2 a b
+  _ -> error "Unreachable"
+
+isFull :: Optional a -> Bool
+isFull (Full _) = True
+isFull _ = False
+
+showD3 = undefined
