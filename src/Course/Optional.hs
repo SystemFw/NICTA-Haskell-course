@@ -55,3 +55,7 @@ instance P.Monad Optional where
     flip bindOptional
   return =
     Full
+
+isFull :: Optional a -> Bool
+isFull (Full _) = True
+isFull _ = False
