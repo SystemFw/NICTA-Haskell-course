@@ -242,6 +242,7 @@ showD3 (D2 Six u) = "sixty" ++ showUnit u
 showD3 (D2 Seven u) = "seventy" ++ showUnit u
 showD3 (D2 Eight u) = "eighty" ++ showUnit u
 showD3 (D2 Nine u) = "ninety" ++ showUnit u
+showD3 (D3 Zero Zero Zero) = ""
 showD3 (D3 Zero d u) = showD3 $ D2 d u
 showD3 (D3 h Zero Zero)= showDigit h ++ " hundred"
 showD3 (D3 h d u) = showD3 (D1 h) ++ " hundred and " ++ showD3 (D2 d u)
@@ -353,38 +354,48 @@ fromChar _ =
 dollars ::
   Chars
   -> Chars
-dollars s =
-  let (m,c) = join (***) (listOptional fromChar) $ break (== '.') s
-      handleOne :: Chars -> Chars
-      handleOne x = if x == "one " then x ++ "dollar" else x ++ "dollars"
-  in (handleOne . illionate .  money $ m) ++ " and " ++ cents c
+dollars s = handleOne "dollar" (money m) ++ " and " ++ handleOne "cent" (cents c)
+  where (m,c) = join (***) (listOptional fromChar) $ break (== '.') s
 
-illionate :: List Digit3 -> Chars
-illionate = (=<<) formatIllion . reverse . filter (not . emptyIllion) . (`zip` illion) . reverse
-  where emptyIllion = (== D3 Zero Zero Zero) . fst
-        formatIllion (d,i) = showD3 d ++ " " ++ i ++ if i == "" then "" else " "
+handleOne :: Chars -> Chars -> Chars
+handleOne unit amount = amount ++ unit ++ if amount == "one " then "" else  "s"
 
-money = map moneyToDigit3 . groupLeftBy 3
-  where moneyToDigit3 :: List Digit -> Digit3
-        moneyToDigit3 Nil = D1 Zero
-        moneyToDigit3 (u:.Nil) = D1 u
-        moneyToDigit3 (d:.u:.Nil) = D2 d u
-        moneyToDigit3 (h:.d:.u:.Nil) = D3 h d u
-        moneyToDigit3 _ = error "Unreachable: the list is guaranteed to have 3 elements at most"
+cents :: List Digit -> Chars
+cents = (++ " ") . showD3 . centsToDigit3
+  where centsToDigit3 c = case take 2 c of
+          Nil -> D1 Zero
+          a :. Nil -> D2 a Zero
+          a :. b :. Nil -> D2 a b
+          _ -> atMost 2
+
+money :: List Digit -> Chars
+money = (=<<) format . illionate . map toDigit3 . groupLeftBy 3
+  where
+    format (d,i) = showD3 d ++ " " ++ i ++ if i == "" then "" else " "
+    illionate = reverse . filter (not . emptyIllion) . (`zip` illion) . reverse 
+    emptyIllion = (== D3 Zero Zero Zero) . fst
+
+    toDigit3 :: List Digit -> Digit3                               
+    toDigit3 Nil = D1 Zero                                         
+    toDigit3 (u:.Nil) = D1 u                                       
+    toDigit3 (d:.u:.Nil) = D2 d u                                  
+    toDigit3 (h:.d:.u:.Nil) = D3 h d u                             
+    toDigit3 _ = atMost 3
 
 groupLeftBy :: Int -> List b -> List (List b)
 groupLeftBy n = foldRight go (pure Nil)
   where go :: a -> List (List a) -> List (List a)
-        go e ll = let h:.Nil  = take 1 ll
+        go e ll = let h:.Nil = take 1 ll
                       t = drop 1 ll
                   in if length h >= n
                      then (pure $ pure e) ++ ll
                      else pure (e:.h) ++ t
 
-cents :: List Digit -> List Char
-cents =(\x -> if x == "one" then x ++ " cent" else (x ++ " cents" )) . showD3 . centsToDigit3
-  where centsToDigit3 c = case take 2 c of
-          Nil -> D1 Zero
-          a :. Nil -> D2 a Zero
-          a :. b :. Nil -> D2 a b
-          _ -> error "Unreachable: the list is guaranteed to have 2 elems max"
+atMost :: Int -> a
+atMost n = error . hlist $ "This pattern is unreachable: the list is guaranteed\
+                            \to have "++ show' n ++ " elements at most"
+
+
+
+
+
