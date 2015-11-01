@@ -1,6 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 {-
 
@@ -19,12 +19,12 @@ data structures that may assist you in deriving the result. It is not compulsory
 
 module Course.Cheque where
 
-import Course.Core
-import Course.Optional
-import Course.List
-import Course.Functor
-import Course.Applicative
-import Course.Monad
+import           Course.Applicative
+import           Course.Core
+import           Course.Functor
+import           Course.List
+import           Course.Monad
+import           Course.Optional
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -220,6 +220,36 @@ data Digit3 =
   | D3 Digit Digit Digit
   deriving Eq
 
+-- Convert a Digit3 to String.
+showD3 :: Digit3 -> Chars
+showD3 (D1 u) = showDigit u
+showD3 (D2 Zero u) = showDigit u
+showD3 (D2 One Zero) = "ten"
+showD3 (D2 One One) = "eleven"
+showD3 (D2 One Two) = "twelve"
+showD3 (D2 One Three) = "thirteen"
+showD3 (D2 One Four) = "fourteen"
+showD3 (D2 One Five)  = "fifteen"
+showD3 (D2 One Six)   = "sixteen"
+showD3 (D2 One Seven) = "seventeen"
+showD3 (D2 One Eight) = "eighteen"
+showD3 (D2 One Nine)  = "nineteen"
+showD3 (D2 Two u) = "twenty" ++ showUnit u
+showD3 (D2 Three u) = "thirty" ++ showUnit u
+showD3 (D2 Four u) = "forty" ++ showUnit u
+showD3 (D2 Five u) = "fifty" ++ showUnit u
+showD3 (D2 Six u) = "sixty" ++ showUnit u
+showD3 (D2 Seven u) = "seventy" ++ showUnit u
+showD3 (D2 Eight u) = "eighty" ++ showUnit u
+showD3 (D2 Nine u) = "ninety" ++ showUnit u
+showD3 (D3 Zero d u) = showD3 $ D2 d u
+showD3 (D3 h Zero Zero)= showDigit h ++ " hundred"
+showD3 (D3 h d u) = showD3 (D1 h) ++ " hundred and " ++ showD3 (D2 d u)
+
+showUnit :: Digit -> Chars
+showUnit Zero = ""
+showUnit u = "-" ++ showDigit u
+
 -- Possibly convert a character to a digit.
 fromChar ::
   Char
@@ -324,22 +354,37 @@ dollars ::
   Chars
   -> Chars
 dollars s =
-  let (m,c) = (reverse . snd &&& reverse . fst) $ break (== '.') $ reverse s
-  in money m ++ " and " ++ cents c
+  let (m,c) = join (***) (listOptional fromChar) $ break (== '.') s
+      handleOne :: Chars -> Chars
+      handleOne x = if x == "one " then x ++ "dollar" else x ++ "dollars"
+  in (handleOne . illionate .  money $ m) ++ " and " ++ cents c
 
-money = id
+illionate :: List Digit3 -> Chars
+illionate = (=<<) formatIllion . reverse . filter (not . emptyIllion) . (`zip` illion) . reverse
+  where emptyIllion = (== D3 Zero Zero Zero) . fst
+        formatIllion (d,i) = showD3 d ++ " " ++ i ++ if i == "" then "" else " "
 
+money = map moneyToDigit3 . groupLeftBy 3
+  where moneyToDigit3 :: List Digit -> Digit3
+        moneyToDigit3 Nil = D1 Zero
+        moneyToDigit3 (u:.Nil) = D1 u
+        moneyToDigit3 (d:.u:.Nil) = D2 d u
+        moneyToDigit3 (h:.d:.u:.Nil) = D3 h d u
+        moneyToDigit3 _ = error "Unreachable: the list is guaranteed to have 3 elements at most"
 
-cents = id
+groupLeftBy :: Int -> List b -> List (List b)
+groupLeftBy n = foldRight go (pure Nil)
+  where go :: a -> List (List a) -> List (List a)
+        go e ll = let h:.Nil  = take 1 ll
+                      t = drop 1 ll
+                  in if length h >= n
+                     then (pure $ pure e) ++ ll
+                     else pure (e:.h) ++ t
 
-aaa c = case take 2 $ filter isFull $ map fromChar c of
-  Nil -> D1 Zero
-  (Full a) :. Nil -> D2 a Zero
-  (Full a) :. (Full b) :.  Nil -> D2 a b
-  _ -> error "Unreachable"
-
-isFull :: Optional a -> Bool
-isFull (Full _) = True
-isFull _ = False
-
-showD3 = undefined
+cents :: List Digit -> List Char
+cents =(\x -> if x == "one" then x ++ " cent" else (x ++ " cents" )) . showD3 . centsToDigit3
+  where centsToDigit3 c = case take 2 c of
+          Nil -> D1 Zero
+          a :. Nil -> D2 a Zero
+          a :. b :. Nil -> D2 a b
+          _ -> error "Unreachable: the list is guaranteed to have 2 elems max"
